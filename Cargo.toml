@@ -1,0 +1,7 @@
+[package]
+name = "bughunt-rustc"
+version = "0.1.0"
+authors = ["Brian L. Troutwine <brian@troutwine.us>"]
+
+[dev-dependencies]
+quickcheck = "0.6"
