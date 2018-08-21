@@ -1,6 +1,6 @@
 [package]
-name = "bughunt-rustc"
-version = "0.1.0"
+name = "bughunt-rust"
+version = "0.1.0-pre"
 authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
 [dev-dependencies]

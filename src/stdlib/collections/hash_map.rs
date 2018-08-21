@@ -1,6 +1,79 @@
-use std::hash::Hash;
+//! Tests for `std::collections::HashMap`
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::mem::swap;
 
+/// Build a [`TrulyAwfulHasher`]
+///
+/// This struct serves only to anchor a [`BuildHasher`]. It has no internal
+/// mechanism.
+pub struct BuildTrulyAwfulHasher {
+    seed: u8,
+}
+
+impl BuildTrulyAwfulHasher {
+    /// Construct a new `BuildTrulyAwfulHasher`
+    ///
+    /// The passed `seed` will be used as the initial seed of the
+    /// [`TrulyAwfulHasher`]. See that type's documentation for details.
+    pub fn new(seed: u8) -> Self {
+        Self { seed }
+    }
+}
+
+impl BuildHasher for BuildTrulyAwfulHasher {
+    type Hasher = TrulyAwfulHasher;
+
+    fn build_hasher(&self) -> Self::Hasher {
+        TrulyAwfulHasher::new(self.seed)
+    }
+}
+
+/// A [`Hasher`] but one which is very bad at its job
+///
+/// The internal mechanism of `TrulyAwfulHasher` is very simple. The type
+/// maintains a `hash_value: u8` which is updated on every call to
+/// [`Hasher::write`]. How is it updated? The first byte is removed from the
+/// input slice and wrappingly summed to `hash_value`. That is, even though the
+/// `Hasher::finish` for this type will return a `u64` we know that the values
+/// will be `[0, 256)`, all but guaranteeing hash-collisions for any user of
+/// this hasher.
+pub struct TrulyAwfulHasher {
+    hash_value: u8,
+}
+
+impl TrulyAwfulHasher {
+    /// Construct a new `TrulyAwfulHasher`
+    ///
+    /// The passed `seed` will be used as the initial value of the type's
+    /// `hash_value`. See this type's documentation for details.
+    fn new(seed: u8) -> Self {
+        Self { hash_value: seed }
+    }
+}
+
+impl Hasher for TrulyAwfulHasher {
+    fn write(&mut self, bytes: &[u8]) -> () {
+        if let Some(byte) = bytes.first() {
+            self.hash_value = self.hash_value.wrapping_add(*byte);
+        }
+    }
+
+    fn finish(&self) -> u64 {
+        self.hash_value as u64
+    }
+}
+
+/// A `HashMap<K, V>` model
+///
+/// This type mimics the semantics of a `HashMap<K, V>` while being 'obviously
+/// correct' enough to serve as a QuickCheck model. The interface for the two
+/// types is roughly equivalent, except in construction. This similarity allows
+/// for `PropHashMap<K, V>` and `HashMap<K, V>` to be compared against one
+/// another in a QuickCheck suite.
+///
+/// In actuality, `PropHashMap<K, V>` is a vector of `(K, V)`. The pairs are not
+/// held in order so the operations against the map are extremely
+/// inefficient. But, they are simple to implement and verify.
 pub struct PropHashMap<K, V>
 where
     K: Eq + Hash,
@@ -21,10 +94,14 @@ impl<K, V> PropHashMap<K, V>
 where
     K: Eq + Hash,
 {
+    /// Construct a new `PropHashMap<K, V>`
     pub fn new() -> Self {
         Self { data: Vec::new() }
     }
 
+    /// Get a value from the `PropHashMap<K, V>`, if one exists
+    ///
+    /// This is like to [`std::collections::HashMap::get`]
     pub fn get(&mut self, k: &K) -> Option<&V> {
         if let Some(idx) = self.data.iter().position(|probe| probe.0 == *k) {
             Some(&(self.data[idx].1))
@@ -33,6 +110,24 @@ where
         }
     }
 
+    /// Determine if the `PropHashMap` is empty
+    ///
+    /// This is like to [`std::collections::HashMap::is_empty`]
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    /// Return the length of the `PropHashMap`
+    ///
+    /// This is like to [`std::collections::HashMap::len`]
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    /// Insert a value into `PropHashMap<K, V>`, returning the previous value if
+    /// one existed
+    ///
+    /// This is like to [`std::collections::HashMap::insert`]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
         if let Some(idx) = self.data.iter().position(|probe| probe.0 == k) {
             // TODO(blt) This violates the semantics of HashMap a
@@ -58,8 +153,14 @@ mod test {
     use quickcheck::{Arbitrary, Gen, QuickCheck, TestResult};
     use std::collections::HashMap;
 
+    // The `Op<K, V>` defines the set of operations that are available against
+    // `HashMap<K, V>` and `PropHashMap<K, V>`. Some map directly to functions
+    // available on the types, others require a more elaborate interpretation
+    // step. See `oprun` below for details.
     #[derive(Clone, Debug)]
     enum Op<K, V> {
+        CheckIsEmpty,
+        CheckLen,
         Insert { k: K, v: V },
         Get { k: K },
     }
@@ -73,23 +174,44 @@ mod test {
         where
             G: Gen,
         {
-            let i: usize = g.gen_range(0, 100);
             let k: K = Arbitrary::arbitrary(g);
             let v: V = Arbitrary::arbitrary(g);
-            match i {
-                0..=50 => Op::Insert { k, v },
-                _ => Op::Get { k },
+            // ================ WARNING ================
+            //
+            // `total_enum_fields` is a goofy annoyance but it should match
+            // _exactly_ the number of fields available in `Op<K, V>`. If it
+            // does not then we'll fail to generate `Op` variants for use in our
+            // QC tests.
+            let total_enum_fields = 4;
+            let variant = g.gen_range(0, total_enum_fields);
+            match variant {
+                0 => Op::CheckIsEmpty,
+                1 => Op::CheckLen,
+                2 => Op::Insert { k, v },
+                3 => Op::Get { k },
+                _ => unreachable!(),
             }
         }
     }
 
     #[test]
     fn oprun() {
-        fn inner(capacity: usize, ops: Vec<Op<u16, u16>>) -> TestResult {
+        fn inner(hash_seed: u8, capacity: usize, ops: Vec<Op<u16, u16>>) -> TestResult {
             let mut model: PropHashMap<u16, u16> = PropHashMap::new();
-            let mut sut: HashMap<u16, u16> = HashMap::with_capacity(capacity);
+            let mut sut: HashMap<u16, u16, BuildTrulyAwfulHasher> =
+                HashMap::with_capacity_and_hasher(capacity, BuildTrulyAwfulHasher::new(hash_seed));
             for op in &ops {
                 match op {
+                    Op::CheckIsEmpty => {
+                        let model_res = model.is_empty();
+                        let sut_res = sut.is_empty();
+                        assert_eq!(model_res, sut_res);
+                    }
+                    Op::CheckLen => {
+                        let model_res = model.len();
+                        let sut_res = sut.len();
+                        assert_eq!(model_res, sut_res);
+                    }
                     Op::Get { k } => {
                         let model_res = model.get(k);
                         let sut_res = sut.get(&k);
@@ -104,6 +226,6 @@ mod test {
             }
             TestResult::passed()
         }
-        QuickCheck::new().quickcheck(inner as fn(usize, Vec<Op<u16, u16>>) -> TestResult)
+        QuickCheck::new().quickcheck(inner as fn(u8, usize, Vec<Op<u16, u16>>) -> TestResult)
     }
 }

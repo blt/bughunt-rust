@@ -3,7 +3,7 @@ extern crate quickcheck;
 
 #[deny(warnings)]
 #[deny(bad_style)]
-// #[deny(missing_docs)]
+#[deny(missing_docs)]
 #[deny(future_incompatible)]
 #[deny(nonstandard_style)]
 #[deny(rust_2018_compatibility)]
