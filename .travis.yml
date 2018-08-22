@@ -10,7 +10,7 @@ matrix:
       before_script:
         - rustup component add rustfmt-preview
       script:
-        - cargo fmt --all -- --write-mode=diff
+        - cargo fmt -- --check
         - cargo test
     - rust: beta
       script:
