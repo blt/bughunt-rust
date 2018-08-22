@@ -124,6 +124,13 @@ where
         self.data.len()
     }
 
+    /// Clear all contents of `PropHashMap`
+    ///
+    /// This is like to [`std::collections::HashMap::clear`]
+    pub fn clear(&mut self) -> () {
+        self.data.clear()
+    }
+
     /// Insert a value into `PropHashMap<K, V>`, returning the previous value if
     /// one existed
     ///
@@ -159,8 +166,11 @@ mod test {
     // step. See `oprun` below for details.
     #[derive(Clone, Debug)]
     enum Op<K, V> {
+        ShrinkToFit,
         CheckIsEmpty,
         CheckLen,
+        CheckCapacity,
+        Clear,
         Insert { k: K, v: V },
         Get { k: K },
     }
@@ -182,13 +192,16 @@ mod test {
             // _exactly_ the number of fields available in `Op<K, V>`. If it
             // does not then we'll fail to generate `Op` variants for use in our
             // QC tests.
-            let total_enum_fields = 4;
+            let total_enum_fields = 7;
             let variant = g.gen_range(0, total_enum_fields);
             match variant {
                 0 => Op::CheckIsEmpty,
                 1 => Op::CheckLen,
                 2 => Op::Insert { k, v },
                 3 => Op::Get { k },
+                4 => Op::ShrinkToFit,
+                5 => Op::CheckCapacity,
+                6 => Op::Clear,
                 _ => unreachable!(),
             }
         }
@@ -202,6 +215,44 @@ mod test {
                 HashMap::with_capacity_and_hasher(capacity, BuildTrulyAwfulHasher::new(hash_seed));
             for op in &ops {
                 match op {
+                    Op::Clear => {
+                        // Clearning a HashMap removes all elements but keeps
+                        // the memory around for reuse. That is, the length
+                        // should drop to zero but the capacity will remain the
+                        // same.
+                        let prev_cap = sut.capacity();
+                        sut.clear();
+                        model.clear();
+                        assert_eq!(0, sut.len());
+                        assert_eq!(sut.len(), model.len());
+                        assert_eq!(prev_cap, sut.capacity());
+                    }
+                    Op::ShrinkToFit => {
+                        // After a shrink the capacity may or may not shift from
+                        // the passed arg `capacity`. But, the capacity of the
+                        // HashMap should never grow after a shrink.
+                        //
+                        // Similarly, the length of the HashMap prior to a
+                        // shrink should match the length after a shrink.
+                        let prev_len = sut.len();
+                        let prev_cap = sut.capacity();
+                        // Note there is no model behaviour here
+                        sut.shrink_to_fit();
+                        assert_eq!(prev_len, sut.len());
+                        assert!(sut.capacity() <= prev_cap);
+                    }
+                    Op::CheckCapacity => {
+                        // `HashMap<K, V>` defines the return of `capacity` as
+                        // being "the number of elements the map can hold
+                        // without reallocating", noting that the number is a
+                        // "lower bound". This implies that:
+                        //
+                        //  * the capacity must always be at least the arg
+                        //    `capacity`
+                        //  * the HashMap capacity must always be at least the
+                        //    length of the model
+                        assert!(sut.capacity() >= model.len());
+                    }
                     Op::CheckIsEmpty => {
                         let model_res = model.is_empty();
                         let sut_res = sut.is_empty();

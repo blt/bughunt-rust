@@ -1,6 +1,11 @@
 language: rust
 cache: cargo
 
+env:
+  global:
+    - QUICKCHECK_GENERATOR_SIZE=10000
+    - QUICKCHECK_TESTS=10000
+
 matrix:
   include:
     - rust: stable
