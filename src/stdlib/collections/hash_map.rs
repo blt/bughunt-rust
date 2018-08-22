@@ -59,17 +59,17 @@ impl Hasher for TrulyAwfulHasher {
     }
 
     fn finish(&self) -> u64 {
-        self.hash_value as u64
+        u64::from(self.hash_value)
     }
 }
 
 /// A `HashMap<K, V>` model
 ///
 /// This type mimics the semantics of a `HashMap<K, V>` while being 'obviously
-/// correct' enough to serve as a QuickCheck model. The interface for the two
+/// correct' enough to serve as a `QuickCheck` model. The interface for the two
 /// types is roughly equivalent, except in construction. This similarity allows
 /// for `PropHashMap<K, V>` and `HashMap<K, V>` to be compared against one
-/// another in a QuickCheck suite.
+/// another in a `QuickCheck` suite.
 ///
 /// In actuality, `PropHashMap<K, V>` is a vector of `(K, V)`. The pairs are not
 /// held in order so the operations against the map are extremely
