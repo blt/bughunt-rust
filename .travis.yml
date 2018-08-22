@@ -1,0 +1,20 @@
+language: rust
+cache: cargo
+
+matrix:
+  include:
+    - rust: stable
+      before_script:
+        - rustup component add rustfmt-preview
+      script:
+        - cargo fmt -- --check
+        - cargo test
+    - rust: beta
+      script:
+        - cargo test
+    - rust: nightly
+      before_script:
+        - rustup component add clippy-preview
+      script:
+        - cargo clippy
+        - cargo test
