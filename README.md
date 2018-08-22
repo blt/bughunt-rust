@@ -1,6 +1,6 @@
 # BugHunt, Rust
 
-[![Build Status](https://travis-ci.org/blt/bughunt-rust.svg?branch=master)](https://travis-ci.org/blt/bughunt-rust)
+[![Build Status](https://travis-ci.com/blt/bughunt-rust.svg?branch=master)](https://travis-ci.com/blt/bughunt-rust)
 
 This project is aiming to provide "stateful" QuickCheck models for Rust's
 standard library. That is, we build up a random list of operations against an

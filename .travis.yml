@@ -1,6 +1,11 @@
 language: rust
 cache: cargo
 
+env:
+  global:
+    - QUICKCHECK_GENERATOR_SIZE=10000
+    - QUICKCHECK_TESTS=10000
+
 matrix:
   include:
     - rust: stable
@@ -9,12 +14,21 @@ matrix:
       script:
         - cargo fmt -- --check
         - cargo test
+    - rust: stable
+      script:
+        - cargo test --release
     - rust: beta
       script:
         - cargo test
+    - rust: beta
+      script:
+        - cargo test --release
     - rust: nightly
       before_script:
         - rustup component add clippy-preview
       script:
         - cargo clippy
         - cargo test
+    - rust: nightly
+      script:
+        - cargo test --release
