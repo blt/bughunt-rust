@@ -54,7 +54,7 @@ impl TrulyAwfulHasher {
 impl Hasher for TrulyAwfulHasher {
     fn write(&mut self, bytes: &[u8]) -> () {
         if let Some(byte) = bytes.first() {
-            self.hash_value = self.hash_value.wrapping_add(*byte);
+            self.hash_value = self.hash_value.wrapping_add(*byte) % 8;
         }
     }
 
@@ -184,8 +184,6 @@ mod test {
         where
             G: Gen,
         {
-            let k: K = Arbitrary::arbitrary(g);
-            let v: V = Arbitrary::arbitrary(g);
             // ================ WARNING ================
             //
             // `total_enum_fields` is a goofy annoyance but it should match
@@ -197,8 +195,15 @@ mod test {
             match variant {
                 0 => Op::CheckIsEmpty,
                 1 => Op::CheckLen,
-                2 => Op::Insert { k, v },
-                3 => Op::Get { k },
+                2 => {
+                    let k: K = Arbitrary::arbitrary(g);
+                    let v: V = Arbitrary::arbitrary(g);
+                    Op::Insert { k, v }
+                }
+                3 => {
+                    let k: K = Arbitrary::arbitrary(g);
+                    Op::Get { k }
+                }
                 4 => Op::ShrinkToFit,
                 5 => Op::CheckCapacity,
                 6 => Op::Clear,
@@ -247,8 +252,6 @@ mod test {
                         // without reallocating", noting that the number is a
                         // "lower bound". This implies that:
                         //
-                        //  * the capacity must always be at least the arg
-                        //    `capacity`
                         //  * the HashMap capacity must always be at least the
                         //    length of the model
                         assert!(sut.capacity() >= model.len());
