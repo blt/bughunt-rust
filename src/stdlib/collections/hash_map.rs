@@ -1,6 +1,6 @@
 //! Tests for `std::collections::HashMap`
 use std::hash::{BuildHasher, Hash, Hasher};
-use std::mem::swap;
+use std::mem;
 
 /// Build a [`TrulyAwfulHasher`]
 ///
@@ -103,11 +103,7 @@ where
     ///
     /// This is like to [`std::collections::HashMap::get`]
     pub fn get(&mut self, k: &K) -> Option<&V> {
-        if let Some(idx) = self.data.iter().position(|probe| probe.0 == *k) {
-            Some(&(self.data[idx].1))
-        } else {
-            None
-        }
+        self.data.iter().find(|probe| probe.0 == *k).map(|e| &e.1)
     }
 
     /// Determine if the `PropHashMap` is empty
@@ -136,19 +132,21 @@ where
     ///
     /// This is like to [`std::collections::HashMap::insert`]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
+        if let Some(e) = self.data.iter_mut().find(|probe| probe.0 == k) {
+            return Some(mem::replace(&mut e.1, v))
+        }
+        self.data.push((k, v));
+        None
+    }
+
+    /// Remove a value from `PropHashMap<K, V>` at the given key, returning the
+    /// previous value if one existed
+    ///
+    /// This is like to [`std::collections::HashMap::remove`]
+    pub fn remove(&mut self, k: K) -> Option<V> {
         if let Some(idx) = self.data.iter().position(|probe| probe.0 == k) {
-            // TODO(blt) This violates the semantics of HashMap a
-            // little. Specifically, we change out the key. HashMap documents
-            // that it _does not_ update the key on every insert, important for
-            // types that are Eq without actually being identical.
-            //
-            // TODO(blt) This is an important enough constraint that there
-            // should be a property around this.
-            let mut pair = (k, v);
-            swap(&mut pair, &mut self.data[idx]);
-            Some(pair.1)
+            Some(self.data.swap_remove(idx).1)
         } else {
-            self.data.push((k, v));
             None
         }
     }
@@ -167,11 +165,10 @@ mod test {
     #[derive(Clone, Debug)]
     enum Op<K, V> {
         ShrinkToFit,
-        CheckIsEmpty,
-        CheckLen,
-        CheckCapacity,
         Clear,
+        Reserve { n: usize },
         Insert { k: K, v: V },
+        Remove { k: K },
         Get { k: K },
     }
 
@@ -190,23 +187,28 @@ mod test {
             // _exactly_ the number of fields available in `Op<K, V>`. If it
             // does not then we'll fail to generate `Op` variants for use in our
             // QC tests.
-            let total_enum_fields = 7;
+            let total_enum_fields = 6;
             let variant = g.gen_range(0, total_enum_fields);
             match variant {
-                0 => Op::CheckIsEmpty,
-                1 => Op::CheckLen,
-                2 => {
+                0 => {
                     let k: K = Arbitrary::arbitrary(g);
                     let v: V = Arbitrary::arbitrary(g);
                     Op::Insert { k, v }
                 }
-                3 => {
+                1 => {
+                    let k: K = Arbitrary::arbitrary(g);
+                    Op::Remove { k }
+                }
+                2 => {
                     let k: K = Arbitrary::arbitrary(g);
                     Op::Get { k }
                 }
-                4 => Op::ShrinkToFit,
-                5 => Op::CheckCapacity,
-                6 => Op::Clear,
+                3 => Op::ShrinkToFit,
+                4 => Op::Clear,
+                5 => {
+                    let n: usize = Arbitrary::arbitrary(g);
+                    Op::Reserve { n }
+                }
                 _ => unreachable!(),
             }
         }
@@ -246,26 +248,6 @@ mod test {
                         assert_eq!(prev_len, sut.len());
                         assert!(sut.capacity() <= prev_cap);
                     }
-                    Op::CheckCapacity => {
-                        // `HashMap<K, V>` defines the return of `capacity` as
-                        // being "the number of elements the map can hold
-                        // without reallocating", noting that the number is a
-                        // "lower bound". This implies that:
-                        //
-                        //  * the HashMap capacity must always be at least the
-                        //    length of the model
-                        assert!(sut.capacity() >= model.len());
-                    }
-                    Op::CheckIsEmpty => {
-                        let model_res = model.is_empty();
-                        let sut_res = sut.is_empty();
-                        assert_eq!(model_res, sut_res);
-                    }
-                    Op::CheckLen => {
-                        let model_res = model.len();
-                        let sut_res = sut.len();
-                        assert_eq!(model_res, sut_res);
-                    }
                     Op::Get { k } => {
                         let model_res = model.get(k);
                         let sut_res = sut.get(&k);
@@ -276,7 +258,34 @@ mod test {
                         let sut_res = sut.insert(*k, *v);
                         assert_eq!(model_res, sut_res);
                     }
+                    Op::Remove { k } => {
+                        let model_res = model.remove(*k);
+                        let sut_res = sut.remove(k);
+                        assert_eq!(model_res, sut_res);
+                    }
+                    Op::Reserve { n } => {
+                        // be sure not to overflow
+                        if sut.capacity().checked_add(*n).is_some() {
+                            sut.reserve(*n);
+                        } //else { // depends on #![feature(try_reserve)]
+                        //    assert!(sut.try_reserve(*n).is_err());
+                        //}
+                    }
                 }
+                // Check invariants
+                //
+                // `HashMap<K, V>` defines the return of `capacity` as
+                // being "the number of elements the map can hold
+                // without reallocating", noting that the number is a
+                // "lower bound". This implies that:
+                //
+                //  * the HashMap capacity must always be at least the
+                //    length of the model
+                assert!(sut.capacity() >= model.len());
+                // The HashMap must be empty when the model ist
+                assert_eq!(model.is_empty(), sut.is_empty());
+                // The HashMap's len must be the same as the model's
+                assert_eq!(model.len(), sut.len());
             }
             TestResult::passed()
         }
