@@ -1,7 +1,4 @@
 extern crate arbitrary;
-#[cfg(test)]
-extern crate quickcheck;
-
 #[deny(warnings)]
 #[deny(bad_style)]
 #[deny(missing_docs)]
