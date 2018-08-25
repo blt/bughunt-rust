@@ -1,3 +1,4 @@
+extern crate arbitrary;
 #[cfg(test)]
 extern crate quickcheck;
 
