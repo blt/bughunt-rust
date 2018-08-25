@@ -159,30 +159,36 @@ where
 /// step.
 #[derive(Clone, Debug)]
 pub enum Op<K, V> {
-    /// TODO
+    /// This opertion triggers `std::collections::HashMap::shrink_to_fit`
     ShrinkToFit,
-    /// TODO
+    /// This operation triggers `std::collections::HashMap::clear`
     Clear,
-    /// TODO
+    /// This operation triggers `std::collections::HashMap::reserve`
     Reserve {
-        /// TODO
-        n: usize,
+        /// Reserve `n` capacity elements
+        ///
+        /// Why is this not usize? It's possible we'll try to reserve
+        /// too much underlying capacity, forcing the `reserve` call to panic
+        /// when the underlying allocation fails. The HashMap does not document
+        /// its overhead per pair and `try_reserve` is still behind a feature
+        /// flag. So, we only reserve smallish capacity and hope for the best.
+        n: u16,
     },
-    /// TODO
+    /// This operation triggers `std::collections::HashMap::insert`
     Insert {
-        /// TODO
+        /// The key to be inserted
         k: K,
-        /// TODO
+        /// The value to be inserted
         v: V,
     },
-    /// TODO
+    /// This operation triggers `std::collections::HashMap::remove`
     Remove {
-        /// TODO
+        /// The key to be removed
         k: K,
     },
-    /// TODO
+    /// This operation triggers `std::collections::HashMap::get`
     Get {
-        /// TODO
+        /// The key to be removed
         k: K,
     },
 }
@@ -221,7 +227,7 @@ where
             3 => Op::ShrinkToFit,
             4 => Op::Clear,
             5 => {
-                let n: usize = Arbitrary::arbitrary(u)?;
+                let n: u16 = Arbitrary::arbitrary(u)?;
                 Op::Reserve { n }
             }
             _ => unreachable!(),

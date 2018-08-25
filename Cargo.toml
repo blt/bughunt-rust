@@ -4,7 +4,7 @@ version = "0.1.0-pre"
 authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
 [dependencies]
-afl = "0.4"
+honggfuzz = "0.5"
 arbitrary = "0.1"
 
 [[bin]]
