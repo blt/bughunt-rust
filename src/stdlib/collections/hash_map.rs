@@ -133,7 +133,7 @@ where
     /// This is like to [`std::collections::HashMap::insert`]
     pub fn insert(&mut self, k: K, v: V) -> Option<V> {
         if let Some(e) = self.data.iter_mut().find(|probe| probe.0 == k) {
-            return Some(mem::replace(&mut e.1, v))
+            return Some(mem::replace(&mut e.1, v));
         }
         self.data.push((k, v));
         None
@@ -143,8 +143,8 @@ where
     /// previous value if one existed
     ///
     /// This is like to [`std::collections::HashMap::remove`]
-    pub fn remove(&mut self, k: K) -> Option<V> {
-        if let Some(idx) = self.data.iter().position(|probe| probe.0 == k) {
+    pub fn remove(&mut self, k: &K) -> Option<V> {
+        if let Some(idx) = self.data.iter().position(|probe| probe.0 == *k) {
             Some(self.data.swap_remove(idx).1)
         } else {
             None
@@ -235,6 +235,8 @@ mod test {
                         assert_eq!(prev_cap, sut.capacity());
                     }
                     Op::ShrinkToFit => {
+                        // NOTE There is no model behaviour here
+                        //
                         // After a shrink the capacity may or may not shift from
                         // the passed arg `capacity`. But, the capacity of the
                         // HashMap should never grow after a shrink.
@@ -243,7 +245,6 @@ mod test {
                         // shrink should match the length after a shrink.
                         let prev_len = sut.len();
                         let prev_cap = sut.capacity();
-                        // Note there is no model behaviour here
                         sut.shrink_to_fit();
                         assert_eq!(prev_len, sut.len());
                         assert!(sut.capacity() <= prev_cap);
@@ -259,17 +260,20 @@ mod test {
                         assert_eq!(model_res, sut_res);
                     }
                     Op::Remove { k } => {
-                        let model_res = model.remove(*k);
+                        let model_res = model.remove(k);
                         let sut_res = sut.remove(k);
                         assert_eq!(model_res, sut_res);
                     }
                     Op::Reserve { n } => {
-                        // be sure not to overflow
+                        // NOTE There is no model behaviour here
+                        //
+                        // When we reserve we carefully check that we're not
+                        // reserving into overflow territory. When
+                        // `#![feature(try_reserve)]` is available we can
+                        // make use of `try_reserve` on the SUT
                         if sut.capacity().checked_add(*n).is_some() {
                             sut.reserve(*n);
-                        } //else { // depends on #![feature(try_reserve)]
-                        //    assert!(sut.try_reserve(*n).is_err());
-                        //}
+                        } // else { assert!(sut.try_reserve(*n).is_err()); }
                     }
                 }
                 // Check invariants
@@ -282,9 +286,10 @@ mod test {
                 //  * the HashMap capacity must always be at least the
                 //    length of the model
                 assert!(sut.capacity() >= model.len());
-                // The HashMap must be empty when the model ist
+                // If the SUT is empty then the model must be.
                 assert_eq!(model.is_empty(), sut.is_empty());
-                // The HashMap's len must be the same as the model's
+                // The length of the SUT must always be exactly the length of
+                // the model.
                 assert_eq!(model.len(), sut.len());
             }
             TestResult::passed()
