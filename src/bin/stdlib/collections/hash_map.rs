@@ -39,12 +39,7 @@ fn main() {
                         BuildTrulyAwfulHasher::new(hash_seed),
                     );
 
-                loop {
-                    let op: Op<u16, u16> = if let Ok(op) = Arbitrary::arbitrary(&mut ring) {
-                        op
-                    } else {
-                        break;
-                    };
+                while let Ok(op) = Arbitrary::arbitrary(&mut ring) {
                     match op {
                         Op::Clear => {
                             // Clearning a HashMap removes all elements but keeps
