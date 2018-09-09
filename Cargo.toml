@@ -3,5 +3,10 @@ name = "bughunt-rust"
 version = "0.1.0-pre"
 authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
-[dev-dependencies]
-quickcheck = "0.6"
+[dependencies]
+honggfuzz = "0.5"
+arbitrary = { git = "https://github.com/blt/rust_arbitrary.git" }
+
+[[bin]]
+path = "src/bin/stdlib/collections/hash_map.rs"
+name = "hash_map"

@@ -1,4 +1,5 @@
 //! Tests for `std::collections::HashMap`
+use arbitrary::*;
 use std::hash::{BuildHasher, Hash, Hasher};
 use std::mem;
 
@@ -152,148 +153,85 @@ where
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use quickcheck::{Arbitrary, Gen, QuickCheck, TestResult};
-    use std::collections::HashMap;
+/// The `Op<K, V>` defines the set of operations that are available against
+/// `HashMap<K, V>` and `PropHashMap<K, V>`. Some map directly to functions
+/// available on the types, others require a more elaborate interpretation
+/// step.
+#[derive(Clone, Debug)]
+pub enum Op<K, V> {
+    /// This opertion triggers `std::collections::HashMap::shrink_to_fit`
+    ShrinkToFit,
+    /// This operation triggers `std::collections::HashMap::clear`
+    Clear,
+    /// This operation triggers `std::collections::HashMap::reserve`
+    Reserve {
+        /// Reserve `n` capacity elements
+        ///
+        /// Why is this not usize? It's possible we'll try to reserve
+        /// too much underlying capacity, forcing the `reserve` call to panic
+        /// when the underlying allocation fails. The HashMap does not document
+        /// its overhead per pair and `try_reserve` is still behind a feature
+        /// flag. So, we only reserve smallish capacity and hope for the best.
+        n: u16,
+    },
+    /// This operation triggers `std::collections::HashMap::insert`
+    Insert {
+        /// The key to be inserted
+        k: K,
+        /// The value to be inserted
+        v: V,
+    },
+    /// This operation triggers `std::collections::HashMap::remove`
+    Remove {
+        /// The key to be removed
+        k: K,
+    },
+    /// This operation triggers `std::collections::HashMap::get`
+    Get {
+        /// The key to be removed
+        k: K,
+    },
+}
 
-    // The `Op<K, V>` defines the set of operations that are available against
-    // `HashMap<K, V>` and `PropHashMap<K, V>`. Some map directly to functions
-    // available on the types, others require a more elaborate interpretation
-    // step. See `oprun` below for details.
-    #[derive(Clone, Debug)]
-    enum Op<K, V> {
-        ShrinkToFit,
-        Clear,
-        Reserve { n: usize },
-        Insert { k: K, v: V },
-        Remove { k: K },
-        Get { k: K },
-    }
-
-    impl<K: 'static, V: 'static> Arbitrary for Op<K, V>
+impl<K, V> Arbitrary for Op<K, V>
+where
+    K: Clone + Send + Arbitrary,
+    V: Clone + Send + Arbitrary,
+{
+    fn arbitrary<U>(u: &mut U) -> Result<Self, U::Error>
     where
-        K: Clone + Send + Arbitrary,
-        V: Clone + Send + Arbitrary,
+        U: Unstructured + ?Sized,
     {
-        fn arbitrary<G>(g: &mut G) -> Op<K, V>
-        where
-            G: Gen,
-        {
-            // ================ WARNING ================
-            //
-            // `total_enum_fields` is a goofy annoyance but it should match
-            // _exactly_ the number of fields available in `Op<K, V>`. If it
-            // does not then we'll fail to generate `Op` variants for use in our
-            // QC tests.
-            let total_enum_fields = 6;
-            let variant = g.gen_range(0, total_enum_fields);
-            match variant {
-                0 => {
-                    let k: K = Arbitrary::arbitrary(g);
-                    let v: V = Arbitrary::arbitrary(g);
-                    Op::Insert { k, v }
-                }
-                1 => {
-                    let k: K = Arbitrary::arbitrary(g);
-                    Op::Remove { k }
-                }
-                2 => {
-                    let k: K = Arbitrary::arbitrary(g);
-                    Op::Get { k }
-                }
-                3 => Op::ShrinkToFit,
-                4 => Op::Clear,
-                5 => {
-                    let n: usize = Arbitrary::arbitrary(g);
-                    Op::Reserve { n }
-                }
-                _ => unreachable!(),
+        // ================ WARNING ================
+        //
+        // `total_enum_fields` is a goofy annoyance but it should match
+        // _exactly_ the number of fields available in `Op<K, V>`. If it
+        // does not then we'll fail to generate `Op` variants for use in our
+        // QC tests.
+        let total_enum_fields = 6;
+        let variant: u8 = Arbitrary::arbitrary(u)?;
+        let op = match variant % total_enum_fields {
+            0 => {
+                let k: K = Arbitrary::arbitrary(u)?;
+                let v: V = Arbitrary::arbitrary(u)?;
+                Op::Insert { k, v }
             }
-        }
-    }
-
-    #[test]
-    fn oprun() {
-        fn inner(hash_seed: u8, capacity: usize, ops: Vec<Op<u16, u16>>) -> TestResult {
-            let mut model: PropHashMap<u16, u16> = PropHashMap::new();
-            let mut sut: HashMap<u16, u16, BuildTrulyAwfulHasher> =
-                HashMap::with_capacity_and_hasher(capacity, BuildTrulyAwfulHasher::new(hash_seed));
-            for op in &ops {
-                match op {
-                    Op::Clear => {
-                        // Clearning a HashMap removes all elements but keeps
-                        // the memory around for reuse. That is, the length
-                        // should drop to zero but the capacity will remain the
-                        // same.
-                        let prev_cap = sut.capacity();
-                        sut.clear();
-                        model.clear();
-                        assert_eq!(0, sut.len());
-                        assert_eq!(sut.len(), model.len());
-                        assert_eq!(prev_cap, sut.capacity());
-                    }
-                    Op::ShrinkToFit => {
-                        // NOTE There is no model behaviour here
-                        //
-                        // After a shrink the capacity may or may not shift from
-                        // the passed arg `capacity`. But, the capacity of the
-                        // HashMap should never grow after a shrink.
-                        //
-                        // Similarly, the length of the HashMap prior to a
-                        // shrink should match the length after a shrink.
-                        let prev_len = sut.len();
-                        let prev_cap = sut.capacity();
-                        sut.shrink_to_fit();
-                        assert_eq!(prev_len, sut.len());
-                        assert!(sut.capacity() <= prev_cap);
-                    }
-                    Op::Get { k } => {
-                        let model_res = model.get(k);
-                        let sut_res = sut.get(&k);
-                        assert_eq!(model_res, sut_res);
-                    }
-                    Op::Insert { k, v } => {
-                        let model_res = model.insert(*k, *v);
-                        let sut_res = sut.insert(*k, *v);
-                        assert_eq!(model_res, sut_res);
-                    }
-                    Op::Remove { k } => {
-                        let model_res = model.remove(k);
-                        let sut_res = sut.remove(k);
-                        assert_eq!(model_res, sut_res);
-                    }
-                    Op::Reserve { n } => {
-                        // NOTE There is no model behaviour here
-                        //
-                        // When we reserve we carefully check that we're not
-                        // reserving into overflow territory. When
-                        // `#![feature(try_reserve)]` is available we can
-                        // make use of `try_reserve` on the SUT
-                        if sut.capacity().checked_add(*n).is_some() {
-                            sut.reserve(*n);
-                        } // else { assert!(sut.try_reserve(*n).is_err()); }
-                    }
-                }
-                // Check invariants
-                //
-                // `HashMap<K, V>` defines the return of `capacity` as
-                // being "the number of elements the map can hold
-                // without reallocating", noting that the number is a
-                // "lower bound". This implies that:
-                //
-                //  * the HashMap capacity must always be at least the
-                //    length of the model
-                assert!(sut.capacity() >= model.len());
-                // If the SUT is empty then the model must be.
-                assert_eq!(model.is_empty(), sut.is_empty());
-                // The length of the SUT must always be exactly the length of
-                // the model.
-                assert_eq!(model.len(), sut.len());
+            1 => {
+                let k: K = Arbitrary::arbitrary(u)?;
+                Op::Remove { k }
             }
-            TestResult::passed()
-        }
-        QuickCheck::new().quickcheck(inner as fn(u8, usize, Vec<Op<u16, u16>>) -> TestResult)
+            2 => {
+                let k: K = Arbitrary::arbitrary(u)?;
+                Op::Get { k }
+            }
+            3 => Op::ShrinkToFit,
+            4 => Op::Clear,
+            5 => {
+                let n: u16 = Arbitrary::arbitrary(u)?;
+                Op::Reserve { n }
+            }
+            _ => unreachable!(),
+        };
+        Ok(op)
     }
 }
