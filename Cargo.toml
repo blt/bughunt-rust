@@ -5,7 +5,7 @@ authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
 [dependencies]
 honggfuzz = "0.5"
-arbitrary = "0.1"
+arbitrary = { git = "https://github.com/blt/rust_arbitrary.git" }
 
 [[bin]]
 path = "src/bin/stdlib/collections/hash_map.rs"

@@ -10,9 +10,12 @@ use std::collections::HashMap;
 fn main() {
     loop {
         fuzz!(|data: &[u8]| {
-            if let Ok(mut ring) = RingBuffer::new(data, 4048) {
-                let hash_seed: u8 =
-                    Arbitrary::arbitrary(&mut ring).expect("unable to compute hash_seed");
+            if let Ok(mut ring) = FiniteBuffer::new(data, 4048) {
+                let hash_seed: u8 = if let Ok(hs) = Arbitrary::arbitrary(&mut ring) {
+                    hs
+                } else {
+                    return;
+                };
                 // Why is capacity not usize? We're very likely to request a
                 // capacity so large that the HashMap cannot allocate enough
                 // slots to store them, resulting in a panic when we call
@@ -23,10 +26,11 @@ fn main() {
                 // force reallocation during execution.
                 //
                 // See note on [`hash_map::Op::Reserve`] for details
-                let capacity: u8 =
-                    Arbitrary::arbitrary(&mut ring).expect("unable to compute capacity");
-                let total_ops: u16 =
-                    Arbitrary::arbitrary(&mut ring).expect("unable to compute total_ops");
+                let capacity: u8 = if let Ok(cap) = Arbitrary::arbitrary(&mut ring) {
+                    cap
+                } else {
+                    return;
+                };
 
                 let mut model: PropHashMap<u16, u16> = PropHashMap::new();
                 let mut sut: HashMap<u16, u16, BuildTrulyAwfulHasher> =
@@ -35,9 +39,12 @@ fn main() {
                         BuildTrulyAwfulHasher::new(hash_seed),
                     );
 
-                for _ in 0..total_ops {
-                    let op: Op<u16, u16> =
-                        Arbitrary::arbitrary(&mut ring).expect("unable to create Op");
+                loop {
+                    let op: Op<u16, u16> = if let Ok(op) = Arbitrary::arbitrary(&mut ring) {
+                        op
+                    } else {
+                        break;
+                    };
                     match op {
                         Op::Clear => {
                             // Clearning a HashMap removes all elements but keeps
