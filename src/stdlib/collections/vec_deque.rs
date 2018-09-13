@@ -38,6 +38,57 @@ impl<T> PropVecDeque<T> {
         self.data.pop()
     }
 
+    /// Push a value to the front of `PropVecDeque<T>`.
+    ///
+    /// This is like to [`std::collections::VecDeque::push_front`]
+    pub fn push_front(&mut self, value: T) -> () {
+        self.data.insert(0, value);
+    }
+
+    /// Pop a value from the front of `PropVecDeque<T>`, if one exists
+    ///
+    /// This is like to [`std::collections::VecDeque::pop_front`]
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.data.is_empty() {
+            None
+        } else {
+            let val = self.data.remove(0);
+            Some(val)
+        }
+    }
+
+    /// Clear all contents of `PropVecDeque`
+    ///
+    /// This is like to [`std::collections::VecDeque::clear`]
+    pub fn clear(&mut self) -> () {
+        self.data.clear()
+    }
+
+    /// Provide a reference to the front element, if one exists
+    ///
+    /// This is like to [`std::collections::VecDeque::front`]
+    pub fn front(&mut self) -> Option<&T> {
+        if self.data.is_empty() {
+            None
+        } else {
+            let val = &self.data[0];
+            Some(val)
+        }
+    }
+
+    /// Provide a reference to the back element, if one exists
+    ///
+    /// This is like to [`std::collections::VecDeque::back`]
+    pub fn back(&mut self) -> Option<&T> {
+        if self.data.is_empty() {
+            None
+        } else {
+            let len = self.data.len();
+            let val = &self.data[len - 1];
+            Some(val)
+        }
+    }
+
     /// Return the number of elements in `PropVecDeque<T>`
     ///
     /// This is like to [`std::collections::VecDeque::len`]
@@ -58,10 +109,18 @@ impl<T> PropVecDeque<T> {
 /// available on the types, others require a more elaborate interpretation step.
 #[derive(Clone, Debug)]
 pub enum Op<T> {
+    /// This opertion triggers `std::collections::VecDeque::shrink_to_fit`
+    ShrinkToFit,
+    /// This operation triggers `std::collections::VecDeque::clear`
+    Clear,
     /// This operation triggers `std::collections::VecDeque::push_back`
     PushBack(T),
     /// This operation triggers `std::collections::VecDeque::pop_back`
     PopBack,
+    /// This operation triggers `std::collections::VecDeque::push_front`
+    PushFront(T),
+    /// This operation triggers `std::collections::VecDeque::pop_front`
+    PopFront,
 }
 
 impl<T> Arbitrary for Op<T>
@@ -78,7 +137,7 @@ where
         // _exactly_ the number of fields available in `Op<T>`. If it
         // does not then we'll fail to generate `Op` variants for use in our
         // QC tests.
-        let total_enum_fields = 2;
+        let total_enum_fields = 6;
         let variant: u8 = Arbitrary::arbitrary(u)?;
         let op = match variant % total_enum_fields {
             0 => {
@@ -86,6 +145,13 @@ where
                 Op::PushBack(t)
             }
             1 => Op::PopBack,
+            2 => {
+                let t: T = Arbitrary::arbitrary(u)?;
+                Op::PushFront(t)
+            }
+            3 => Op::PopFront,
+            4 => Op::Clear,
+            5 => Op::ShrinkToFit,
             _ => unreachable!(),
         };
         Ok(op)
