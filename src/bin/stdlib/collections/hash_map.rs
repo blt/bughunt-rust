@@ -10,7 +10,7 @@ use std::collections::HashMap;
 fn main() {
     loop {
         fuzz!(|data: &[u8]| {
-            if let Ok(mut ring) = FiniteBuffer::new(data, 4048) {
+            if let Ok(mut ring) = FiniteBuffer::new(data, 65_563) {
                 let hash_seed: u8 = if let Ok(hs) = Arbitrary::arbitrary(&mut ring) {
                     hs
                 } else {

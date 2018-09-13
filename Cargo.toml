@@ -10,3 +10,7 @@ arbitrary = { git = "https://github.com/blt/rust_arbitrary.git" }
 [[bin]]
 path = "src/bin/stdlib/collections/hash_map.rs"
 name = "hash_map"
+
+[[bin]]
+path = "src/bin/stdlib/collections/vec_deque.rs"
+name = "vec_deque"
