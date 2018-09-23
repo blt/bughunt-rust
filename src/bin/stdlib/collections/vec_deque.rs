@@ -65,6 +65,11 @@ fn main() {
                             let model_res = model.pop_back();
                             assert_eq!(sut_res, model_res);
                         }
+                        Op::Insert(idx, t) => {
+                            let scaled_idx = idx % model.len();
+                            model.insert(scaled_idx, t);
+                            sut.insert(scaled_idx, t);
+                        }
                     }
                     // Check invariants
                     //

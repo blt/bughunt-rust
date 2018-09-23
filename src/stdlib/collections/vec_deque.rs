@@ -45,6 +45,13 @@ impl<T> PropVecDeque<T> {
         self.data.insert(0, value);
     }
 
+    /// Insert a value at the given index into `PropVecDeque<T>`.
+    ///
+    /// This is like to [`std::collections::VecDeque::insert`]
+    pub fn insert(&mut self, index: usize, value: T) -> () {
+        self.data.insert(index, value);
+    }
+
     /// Pop a value from the front of `PropVecDeque<T>`, if one exists
     ///
     /// This is like to [`std::collections::VecDeque::pop_front`]
@@ -121,6 +128,8 @@ pub enum Op<T> {
     PushFront(T),
     /// This operation triggers `std::collections::VecDeque::pop_front`
     PopFront,
+    /// This operation triggers `std::collections::VecDeque::insert`
+    Insert(usize, T),
 }
 
 impl<T> Arbitrary for Op<T>
@@ -137,7 +146,7 @@ where
         // _exactly_ the number of fields available in `Op<T>`. If it
         // does not then we'll fail to generate `Op` variants for use in our
         // QC tests.
-        let total_enum_fields = 6;
+        let total_enum_fields = 7;
         let variant: u8 = Arbitrary::arbitrary(u)?;
         let op = match variant % total_enum_fields {
             0 => {
@@ -152,6 +161,11 @@ where
             3 => Op::PopFront,
             4 => Op::Clear,
             5 => Op::ShrinkToFit,
+            6 => {
+                let idx: usize = Arbitrary::arbitrary(u)?;
+                let t: T = Arbitrary::arbitrary(u)?;
+                Op::Insert(idx, t)
+            }
             _ => unreachable!(),
         };
         Ok(op)
