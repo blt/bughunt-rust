@@ -52,6 +52,17 @@ impl<T> PropVecDeque<T> {
         self.data.insert(index, value);
     }
 
+    /// Remove and return a value from the given index `PropVecDeque<T>`.
+    ///
+    /// This is like to [`std::collections::VecDeque::remove`]
+    pub fn remove(&mut self, index: usize) -> Option<T> {
+        if index < self.data.len() {
+            Some(self.data.remove(index))
+        } else {
+            None
+        }
+    }
+
     /// Pop a value from the front of `PropVecDeque<T>`, if one exists
     ///
     /// This is like to [`std::collections::VecDeque::pop_front`]
@@ -130,6 +141,8 @@ pub enum Op<T> {
     PopFront,
     /// This operation triggers `std::collections::VecDeque::insert`
     Insert(usize, T),
+    /// This operation triggers `std::collections::VecDeque::remove`
+    Remove(usize),
 }
 
 impl<T> Arbitrary for Op<T>
@@ -146,7 +159,7 @@ where
         // _exactly_ the number of fields available in `Op<T>`. If it
         // does not then we'll fail to generate `Op` variants for use in our
         // QC tests.
-        let total_enum_fields = 7;
+        let total_enum_fields = 8;
         let variant: u8 = Arbitrary::arbitrary(u)?;
         let op = match variant % total_enum_fields {
             0 => {
@@ -165,6 +178,10 @@ where
                 let idx: usize = Arbitrary::arbitrary(u)?;
                 let t: T = Arbitrary::arbitrary(u)?;
                 Op::Insert(idx, t)
+            }
+            7 => {
+                let idx: usize = Arbitrary::arbitrary(u)?;
+                Op::Remove(idx)
             }
             _ => unreachable!(),
         };

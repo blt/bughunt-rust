@@ -70,6 +70,11 @@ fn main() {
                             model.insert(scaled_idx, t);
                             sut.insert(scaled_idx, t);
                         }
+                        Op::Remove(idx) => {
+                            let sut_res = sut.remove(idx);
+                            let model_res = model.remove(idx);
+                            assert_eq!(sut_res, model_res);
+                        }
                     }
                     // Check invariants
                     //
