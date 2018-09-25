@@ -113,7 +113,7 @@ impl<T> PropVecDeque<T> {
     /// This is like to [`std::collections::VecDeque::swap_remove_back`]
     pub fn swap_remove_back(&mut self, index: usize) -> Option<T> {
         if self.data.is_empty() {
-            return None;
+            None
         } else if self.data.len() == 1 {
             self.pop_back()
         } else if index < self.data.len() {
