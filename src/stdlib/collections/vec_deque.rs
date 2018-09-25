@@ -107,6 +107,24 @@ impl<T> PropVecDeque<T> {
         }
     }
 
+    /// Replace an element at the given index with the back element, return the
+    /// replaced element
+    ///
+    /// This is like to [`std::collections::VecDeque::swap_remove_back`]
+    pub fn swap_remove_back(&mut self, index: usize) -> Option<T> {
+        if self.data.is_empty() {
+            return None;
+        } else if self.data.len() == 1 {
+            self.pop_back()
+        } else if index < self.data.len() {
+            let back = self.data.len() - 1;
+            self.data.swap(index, back);
+            self.pop_back()
+        } else {
+            None
+        }
+    }
+
     /// Return the number of elements in `PropVecDeque<T>`
     ///
     /// This is like to [`std::collections::VecDeque::len`]
@@ -143,6 +161,8 @@ pub enum Op<T> {
     Insert(usize, T),
     /// This operation triggers `std::collections::VecDeque::remove`
     Remove(usize),
+    /// This operation triggers `std::collections::VecDeque::swap_remove_back`
+    SwapRemoveBack(usize),
 }
 
 impl<T> Arbitrary for Op<T>
@@ -159,7 +179,7 @@ where
         // _exactly_ the number of fields available in `Op<T>`. If it
         // does not then we'll fail to generate `Op` variants for use in our
         // QC tests.
-        let total_enum_fields = 8;
+        let total_enum_fields = 9;
         let variant: u8 = Arbitrary::arbitrary(u)?;
         let op = match variant % total_enum_fields {
             0 => {
@@ -182,6 +202,10 @@ where
             7 => {
                 let idx: usize = Arbitrary::arbitrary(u)?;
                 Op::Remove(idx)
+            }
+            8 => {
+                let idx: usize = Arbitrary::arbitrary(u)?;
+                Op::SwapRemoveBack(idx)
             }
             _ => unreachable!(),
         };
