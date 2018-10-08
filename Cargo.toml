@@ -8,6 +8,10 @@ honggfuzz = "0.5"
 arbitrary = { git = "https://github.com/blt/rust_arbitrary.git" }
 
 [[bin]]
+path = "src/bin/stdlib/str/repeat.rs"
+name = "str_repeat"
+
+[[bin]]
 path = "src/bin/stdlib/collections/hash_map.rs"
 name = "hash_map"
 

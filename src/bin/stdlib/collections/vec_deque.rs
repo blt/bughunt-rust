@@ -66,7 +66,7 @@ fn main() {
                             assert_eq!(sut_res, model_res);
                         }
                         Op::Insert(idx, t) => {
-                            let scaled_idx = if model.is_empty() {
+                            let scaled_idx = if !model.is_empty() {
                                 idx % model.len()
                             } else {
                                 0
