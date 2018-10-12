@@ -4,8 +4,9 @@ version = "0.1.0-pre"
 authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
 [dependencies]
-honggfuzz = "0.5"
-arbitrary = { git = "https://github.com/blt/rust_arbitrary.git" }
+afl       = "0.4"
+arbitrary = "0.2"
+bh_alloc  = "0.1"
 
 [[bin]]
 path = "src/bin/stdlib/str/repeat.rs"
