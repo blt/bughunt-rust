@@ -20,95 +20,58 @@ for crashes.
 
 ## Running the Suite
 
-Getting the QuickCheck models running is straightforward. Clone this repository and run:
+Running the tests takes a little leg work. The project performs model-based
+fuzzing, which means the tests are driven by a fuzzer, AFL in particular. We've
+written about the general approach
+[here](https://blog.troutwine.us/2018/10/08/hunting-for-bugs-in-rust/).
+
+The available targets are listed out in [`Cargo.toml`], the binaries of the
+project. Say you want to run the `str::repeat` target. Make sure you've got AFL
+installed by running `cargo install afl`. That done, create input and output
+directories for the fuzzer. The input directory influences what the fuzzer
+initially uses to populate it's testcase pool. The output directory will hold
+crashes, timeout etc data. Inputs have a huge influence on the running behaviour
+of a target but it's not straightforward to know what input you should
+supply. This is, uh, an open area of research.
+
+We'll create an input directory filled with not-so-great data
 
 ```
-> cargo test
+> mkdir -p /tmp/repeat/in
+> date >> /tmp/repeat/in/0000
+> date >> /tmp/repeat/in/0001
+> date >> /tmp/repeat/in/0002
+> date >> /tmp/repeat/in/0003
 ```
 
-This should finish fairly rapidly and, sadly, won't be a comprehensive
-search. The [QuickCheck we use](https://github.com/BurntSushi/quickcheck/) has
-fairly low default generator settings, leading to a small-sized (but fast!)
-state space search. An effective run will need to _drastically_ increase the
-available state space. Here's a run that executes each model test 100 times:
+and an output directory:
 
 ```
-> time cargo test
-    Finished dev [unoptimized + debuginfo] target(s) in 0.09s
-     Running target/debug/deps/bughunt_rust-e1e71a34753653e7
-
-running 1 test
-test stdlib::collections::hash_map::test::oprun ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-   Doc-tests bughunt-rust
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-cargo test  0.17s user 0.27s system 88% cpu 0.495 total
+> mkdir -p /tmp/repeat/out
 ```
 
-Note this is us running `cargo test` again; the default is to run 100
-tests. Here's 10,000 times:
+You can place these anywhere on disk you'd like. This is just an example. Okay,
+from the root of the project:
 
 ```
-time QUICKCHECK_TESTS=10000 cargo test
-    Finished dev [unoptimized + debuginfo] target(s) in 0.09s
-     Running target/debug/deps/bughunt_rust-e1e71a34753653e7
-
-running 1 test
-test stdlib::collections::hash_map::test::oprun ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-   Doc-tests bughunt-rust
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-QUICKCHECK_TESTS=10000 cargo test  1.82s user 0.32s system 97% cpu 2.196 total
+> cargo build
+> cargo afl fuzz -i /tmp/repeat/in -o /tmp/repeat/out/ target/debug/str_repeat
 ```
 
-QuickCheck also has a notion of generator 'size', the details of which is beyond
-the scope of this document. I promise, you're going to want to increase that
-from the default too. Here's a generator size of 1000, total tests 10,000:
-
-```
-> time QUICKCHECK_GENERATOR_SIZE=1000 QUICKCHECK_TESTS=10000 cargo test
-    Finished dev [unoptimized + debuginfo] target(s) in 0.08s
-     Running target/debug/deps/bughunt_rust-e1e71a34753653e7
-
-running 1 test
-test stdlib::collections::hash_map::test::oprun ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-   Doc-tests bughunt-rust
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-
-QUICKCHECK_GENERATOR_SIZE=1000 QUICKCHECK_TESTS=10000 cargo test  25.60s user 1.05s system 97% cpu 27.315 total
-```
-
-Slower each time but, potentially, more comprehensive. A reasonable test run
-will take hours. (In fact, a suitable change to Rust QuickCheck would be to bind
-its total tests not on number of tests but on duration of testing. Production
-QuickCheck systems allow you to configure them to run all night and send a
-report in the morning.)
+A reasonable test run will take hours. With the flags used above the run will
+proceed indefinitely. Please note that AFL is single-threaded and to exploit
+multi-core systems you'll need to spawn additional worker processes. This is
+documented in the [AFL
+project](https://github.com/mirrorer/afl/blob/master/docs/parallel_fuzzing.txt).
 
 ### Why does this run outside of Rust itself?
 
-Well! I'm not sure that bundling QuickCheck into the Rust compiler project is
-something anyone would go for and, working here as an external project, we can
-avoid needing to fiddle with toolchains and longish build cycles. Downside is,
-the std data structures we're testing don't have any sanitizers turned on etc on
-account of the project is run against the usual Rust releases.
+Well! I'm not sure that bundling these long-running tests into the Rust compiler
+project is something anyone would go for and, working here as an external
+project, we can avoid needing to fiddle with toolchains and longish build
+cycles. Downside is, the std data structures we're testing don't have any
+sanitizers turned on etc on account of the project is run against the usual Rust
+releases.
 
 ## Contributing
 
@@ -117,13 +80,6 @@ either introducing new models into the project or extending existing ones. Once
 the project is a little more advanced donations of computing resources will
 also be welcome. Writing QuickCheck models can be slow but, boy, running them is
 no joke.
-
-### Would you take fuzz tests?
-
-Yes! There's a fair deal of overlap with writing effective fuzzers and writing
-effective QuickCheck models. This project will happily take fuzz code. Or, if
-someone could contrive to combine a fuzzer with a shrinking step this project
-will jump on that in a heartbeat.
 
 ### Would you take CI help?
 
