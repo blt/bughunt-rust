@@ -53,7 +53,7 @@ impl TrulyAwfulHasher {
 }
 
 impl Hasher for TrulyAwfulHasher {
-    fn write(&mut self, bytes: &[u8]) -> () {
+    fn write(&mut self, bytes: &[u8]) {
         if let Some(byte) = bytes.first() {
             self.hash_value = self.hash_value.wrapping_add(*byte) % 8;
         }
@@ -124,7 +124,7 @@ where
     /// Clear all contents of `PropHashMap`
     ///
     /// This is like to [`std::collections::HashMap::clear`]
-    pub fn clear(&mut self) -> () {
+    pub fn clear(&mut self) {
         self.data.clear()
     }
 

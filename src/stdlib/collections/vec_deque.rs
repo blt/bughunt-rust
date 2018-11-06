@@ -27,7 +27,7 @@ impl<T> PropVecDeque<T> {
     /// Push a value onto the back of `PropVecDeque<T>`
     ///
     /// This is like to [`std::collections::VecDeque::push_back`]
-    pub fn push_back(&mut self, value: T) -> () {
+    pub fn push_back(&mut self, value: T) {
         self.data.push(value)
     }
 
@@ -41,14 +41,14 @@ impl<T> PropVecDeque<T> {
     /// Push a value to the front of `PropVecDeque<T>`.
     ///
     /// This is like to [`std::collections::VecDeque::push_front`]
-    pub fn push_front(&mut self, value: T) -> () {
+    pub fn push_front(&mut self, value: T) {
         self.data.insert(0, value);
     }
 
     /// Insert a value at the given index into `PropVecDeque<T>`.
     ///
     /// This is like to [`std::collections::VecDeque::insert`]
-    pub fn insert(&mut self, index: usize, value: T) -> () {
+    pub fn insert(&mut self, index: usize, value: T) {
         self.data.insert(index, value);
     }
 
@@ -78,7 +78,7 @@ impl<T> PropVecDeque<T> {
     /// Clear all contents of `PropVecDeque`
     ///
     /// This is like to [`std::collections::VecDeque::clear`]
-    pub fn clear(&mut self) -> () {
+    pub fn clear(&mut self) {
         self.data.clear()
     }
 
