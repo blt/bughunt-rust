@@ -145,7 +145,7 @@ impl<T> PropVecDeque<T> {
 /// available on the types, others require a more elaborate interpretation step.
 #[derive(Clone, Debug)]
 pub enum Op<T> {
-    /// This opertion triggers `std::collections::VecDeque::shrink_to_fit`
+    /// This operation triggers `std::collections::VecDeque::shrink_to_fit`
     ShrinkToFit,
     /// This operation triggers `std::collections::VecDeque::clear`
     Clear,
