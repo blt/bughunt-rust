@@ -46,7 +46,7 @@ fn main() {
             while let Ok(op) = Arbitrary::arbitrary(&mut ring) {
                 match op {
                     Op::Clear => {
-                        // Clearning a HashMap removes all elements but keeps
+                        // Clearing a HashMap removes all elements but keeps
                         // the memory around for reuse. That is, the length
                         // should drop to zero but the capacity will remain the
                         // same.

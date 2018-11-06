@@ -38,7 +38,7 @@ fn main() {
             // 'repeats' is greater than usize. The trick is though, we
             // don't know how much memory is actually available on-system:
             // any largish allocation might panic before reaching usize
-            // terriory. As a result, we request an arbitrary u16 and bump
+            // territory. As a result, we request an arbitrary u16 and bump
             // that up to word size.
             //
             // I could, I guess, wrap the call to `str::repeat` in a

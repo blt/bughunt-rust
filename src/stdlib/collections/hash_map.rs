@@ -159,7 +159,7 @@ where
 /// step.
 #[derive(Clone, Debug)]
 pub enum Op<K, V> {
-    /// This opertion triggers `std::collections::HashMap::shrink_to_fit`
+    /// This operation triggers `std::collections::HashMap::shrink_to_fit`
     ShrinkToFit,
     /// This operation triggers `std::collections::HashMap::clear`
     Clear,
