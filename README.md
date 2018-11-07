@@ -54,7 +54,7 @@ You can place these anywhere on disk you'd like. This is just an example. Okay,
 from the root of the project:
 
 ```
-> cargo build
+> cargo afl build
 > cargo afl fuzz -i /tmp/repeat/in -o /tmp/repeat/out/ target/debug/str_repeat
 ```
 
