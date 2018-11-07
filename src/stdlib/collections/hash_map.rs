@@ -166,7 +166,7 @@ pub enum Op<K, V> {
     /// This operation triggers `std::collections::HashMap::reserve`
     Reserve {
         /// Reserve `n` capacity elements
-        n: usize,
+        n: u16,
     },
     /// This operation triggers `std::collections::HashMap::insert`
     Insert {
@@ -221,7 +221,7 @@ where
             3 => Op::ShrinkToFit,
             4 => Op::Clear,
             5 => {
-                let n: usize = Arbitrary::arbitrary(u)?;
+                let n: u16 = Arbitrary::arbitrary(u)?;
                 Op::Reserve { n }
             }
             _ => unreachable!(),
