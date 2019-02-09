@@ -7,6 +7,8 @@ authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 afl       = "0.4"
 arbitrary = "0.2"
 bh_alloc  = "0.1"
+strum = "0.13.0"
+strum_macros = "0.13.0"
 
 [[bin]]
 path = "src/bin/stdlib/str/repeat.rs"

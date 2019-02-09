@@ -143,7 +143,7 @@ impl<T> PropVecDeque<T> {
 /// The `Op<T>` defines the set of operations that are available against
 /// `VecDeque<K, V>` and `PropVecDeque<T>`. Some map directly to functions
 /// available on the types, others require a more elaborate interpretation step.
-#[derive(Clone, Debug)]
+#[derive(Clone, EnumCount, Debug)]
 pub enum Op<T> {
     /// This operation triggers `std::collections::VecDeque::shrink_to_fit`
     ShrinkToFit,
@@ -173,13 +173,7 @@ where
     where
         U: Unstructured + ?Sized,
     {
-        // ================ WARNING ================
-        //
-        // `total_enum_fields` is a goofy annoyance but it should match
-        // _exactly_ the number of fields available in `Op<T>`. If it
-        // does not then we'll fail to generate `Op` variants for use in our
-        // QC tests.
-        let total_enum_fields = 9;
+        let total_enum_fields = OP_COUNT as u8;
         let variant: u8 = Arbitrary::arbitrary(u)?;
         let op = match variant % total_enum_fields {
             0 => {
