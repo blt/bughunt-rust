@@ -21,3 +21,6 @@ name = "hash_map"
 [[bin]]
 path = "src/bin/stdlib/collections/vec_deque.rs"
 name = "vec_deque"
+
+[patch.crates-io]
+strum_macros = { git = "https://github.com/dwijnand/strum", branch = "enum_count_docs" }

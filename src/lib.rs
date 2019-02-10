@@ -4,7 +4,7 @@ extern crate strum;
 extern crate strum_macros;
 #[deny(warnings)]
 #[deny(bad_style)]
-#[allow(missing_docs)]
+#[deny(missing_docs)]
 #[deny(future_incompatible)]
 #[deny(nonstandard_style)]
 #[deny(rust_2018_compatibility)]
