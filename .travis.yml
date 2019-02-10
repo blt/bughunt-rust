@@ -11,8 +11,10 @@ matrix:
     - rust: stable
       before_script:
         - rustup component add rustfmt
+        - rustup component add clippy
       script:
         - cargo fmt -- --check
+        - cargo clippy
         - cargo test
     - rust: stable
       script:
