@@ -24,10 +24,7 @@ matrix:
       script:
         - cargo test --release
     - rust: nightly
-      before_script:
-        - rustup component add clippy
       script:
-        - cargo clippy
         - cargo test
     - rust: nightly
       script:
