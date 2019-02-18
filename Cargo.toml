@@ -23,4 +23,4 @@ path = "src/bin/stdlib/collections/vec_deque.rs"
 name = "vec_deque"
 
 [patch.crates-io]
-strum_macros = { git = "https://github.com/dwijnand/strum", branch = "enum_count_docs" }
+strum_macros = { git = "https://github.com/Peternator7/strum" }
