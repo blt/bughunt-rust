@@ -10,9 +10,11 @@ matrix:
   include:
     - rust: stable
       before_script:
-        - rustup component add rustfmt-preview
+        - rustup component add rustfmt
+        - rustup component add clippy
       script:
         - cargo fmt -- --check
+        - cargo clippy
         - cargo test
     - rust: stable
       script:
@@ -24,10 +26,7 @@ matrix:
       script:
         - cargo test --release
     - rust: nightly
-      before_script:
-        - rustup component add clippy-preview
       script:
-        - cargo clippy
         - cargo test
     - rust: nightly
       script:
