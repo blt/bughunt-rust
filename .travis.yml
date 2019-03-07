@@ -5,4 +5,5 @@ rust:
   - nightly
 
 script:
+  - cargo install afl
   - cargo afl build
