@@ -1,6 +1,9 @@
 language: rust
 cache: cargo
 
+env:
+  - RUSTFLAGS="-Clink-arg=-fuse-ld=gold"
+
 rust:
   - nightly
 
