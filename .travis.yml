@@ -10,4 +10,4 @@ script:
 - "./ci/upload_builds.sh"
 before_install:
 - openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv
-  -in auth.json-enc -out auth.json -d
+  -in ci/auth.json-enc -out ci/auth.json -d

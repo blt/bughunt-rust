@@ -5,4 +5,4 @@ resources/
 hfuzz_*
 out/
 in/
-auth.json
+ci/auth.json
