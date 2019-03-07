@@ -1,9 +1,11 @@
 language: rust
 cache: cargo
+
 env:
-- RUSTFLAGS="-Clink-arg=-fuse-ld=gold"
+  - RUSTFLAGS="-Clink-arg=-fuse-ld=gold"
+
 rust:
-- nightly
+  - nightly
 
 script:
   - cargo install --force afl
@@ -11,4 +13,4 @@ script:
   - "./ci/upload_builds.sh"
 
 before_install:
-- openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv -in ci/auth.json -out ci/auth-decrypt.json -d
+  - openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv -in ci/auth.json -out ci/auth-decrypt.json -d
