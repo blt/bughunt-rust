@@ -1,21 +1,15 @@
 language: rust
 cache: cargo
-
 env:
-  - RUSTFLAGS="-Clink-arg=-fuse-ld=gold"
-
+- RUSTFLAGS="-Clink-arg=-fuse-ld=gold"
 rust:
-  - nightly
+- nightly
 
 script:
   - cargo install --force afl
   - cargo afl build
   - "./ci/upload_builds.sh"
 
-deploy:
-  provider: gcs
-  access_key_id: GOOGMLY7EIZBVK6FZDUBQNSP
-  secret_access_key:
-    secure: Euw3nqCc3QYxGFPEF3Opy1rX5L1WEsRGI4Rwv4fnQYZrXIXABDEiMl8qflPE1Xlw+FE7ssvatSf+XG72KF0ih6S3911xv8/ezVeK3YVcI22lNv7gR0NhnBPUuMLfZ8zXNdZluk++5s4zjIgJSef866n6R8congrhG2z05CW3uZhuq28tDUN2lj4JVpx/opAzazlI2AtQvFzVL9pMEI7+d8SIUFn7cHHgaKaCms02ycadxfnp9YdvBOuQrOkDtZUh/kGZQkKMHAGtOWasaRT7Dlbx31chPNuAiZG7IqI6SrhW0SlFRKxy4X3HboUlv/SCbrCfZpka4c2Y0TYLN3Q75uVho2fkuWRnd7qjAXHt3+5U0YP46YtoosFNhd695N35vyk7fv42R5Oz8slsDDibQLBAJJga22+iNK5ZxETgHR1YFDfy++1DVO4ksZmQVQmp1k8SEjJZCzMsLnO6W9sp8xryR3oMWrI8XIeQvmZyq9sniJNaieIE4YmYjRQGt1CrlXQigOdZlM6k7LpbFHizKnxaVS/eOnKJYLAue+KEbqqZ5dNzux2ZsjlATA47aXrvOrCqyPRWwjUSPElP68eXNuZuotUn04KUq8J3ClENEcUuScWcjDtkOO+FUaPZbe2CFePQDsDVLwMwbMKPL65KJZbC29Su2bM3817Hy1AZN4o=
-  bucket: ''
-  local-dir: gs://builds.bughunt.appspot.com
+before_install:
+- openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv
+  -in ci/auth.json -out ci/auth-decrypt.json -d
