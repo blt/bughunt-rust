@@ -10,3 +10,4 @@ rust:
 script:
   - cargo install --force afl
   - cargo afl build
+  - ./ci/upload_builds.sh
