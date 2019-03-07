@@ -1,33 +1,8 @@
 language: rust
 cache: cargo
 
-env:
-  global:
-    - QUICKCHECK_GENERATOR_SIZE=10000
-    - QUICKCHECK_TESTS=10000
+rust:
+  - nightly
 
-matrix:
-  include:
-    - rust: stable
-      before_script:
-        - rustup component add rustfmt
-        - rustup component add clippy
-      script:
-        - cargo fmt -- --check
-        - cargo clippy
-        - cargo test
-    - rust: stable
-      script:
-        - cargo test --release
-    - rust: beta
-      script:
-        - cargo test
-    - rust: beta
-      script:
-        - cargo test --release
-    - rust: nightly
-      script:
-        - cargo test
-    - rust: nightly
-      script:
-        - cargo test --release
+script:
+  - cargo afl build
