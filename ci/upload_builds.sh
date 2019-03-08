@@ -7,5 +7,5 @@ for TEST in str_repeat
 do
     TRGT=${BUILD_DIR}${TEST}.tar.gz
     tar zcf ${TRGT} ${BUILD_DIR}${TEST}
-    gsutil cp ${TRGT} gs://builds.bughunt.appspot.com/${TEST}/${TRAVIS_BUILD_NUMBER}_${TEST}
+    gsutil cp ${TRGT} gs://builds.bughunt.appspot.com/${TEST}/${TEST}-${TRAVIS_BUILD_NUMBER}.tar.gz
 done
