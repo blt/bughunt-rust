@@ -4,7 +4,7 @@ rust:
 - nightly
 script:
 - cargo install --force afl
-- RUSTFLAGS="-Clink-arg=-fuse-ld=gold -Cllvm-args=-fsanitize=fuzzer" cargo afl build
+- RUSTFLAGS="-Clink-arg=-fuse-ld=gold -asan-stack=fuzzer" cargo afl build
 - "./ci/upload_builds.sh"
 before_install:
 - openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv
