@@ -2,7 +2,7 @@
 
 source ci/common.sh
 
-BUILD_DIR=fuzz/target/x86_64-apple-darwin/debug/
+BUILD_DIR=fuzz/target/debug/
 
 gcloud auth activate-service-account --key-file ci/auth.json
 ls ${BUILD_DIR}
