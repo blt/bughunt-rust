@@ -2,11 +2,9 @@
 
 source ci/common.sh
 
-BUILD_DIR=fuzz/target/
+BUILD_DIR=fuzz/target/x86_64-unknown-linux-gnu/debug/
 
 gcloud auth activate-service-account --key-file ci/auth.json
-tree ${BUILD_DIR}
-exit 0
 for TEST in ${TESTS}
 do
     TRGT=${BUILD_DIR}${TEST}.tar.gz
