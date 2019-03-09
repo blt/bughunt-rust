@@ -3,8 +3,8 @@ cache: cargo
 rust:
 - nightly
 script:
-- cargo install --force afl
-- RUSTFLAGS="-Clink-arg=-fuse-ld=gold -asan-stack=fuzzer" cargo afl build
+- cargo install --force cargo-fuzz
+- "./ci/builds.sh"
 - "./ci/upload_builds.sh"
 before_install:
 - openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv

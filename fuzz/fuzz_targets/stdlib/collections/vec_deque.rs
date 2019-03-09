@@ -1,18 +1,14 @@
-extern crate bh_alloc;
+#![no_main]
 #[macro_use]
-extern crate afl;
+extern crate libfuzzer_sys;
 extern crate arbitrary;
 extern crate bughunt_rust;
-
-#[global_allocator]
-static ALLOC: bh_alloc::BumpAlloc = bh_alloc::BumpAlloc::INIT;
 
 use arbitrary::*;
 use bughunt_rust::stdlib::collections::vec_deque::*;
 use std::collections::VecDeque;
 
-fn main() {
-    fuzz!(|data: &[u8]| {
+fuzz_target!(|data: &[u8]| {
         if let Ok(mut ring) = FiniteBuffer::new(data, 65_563) {
             let capacity: u8 = if let Ok(cap) = Arbitrary::arbitrary(&mut ring) {
                 cap
@@ -115,5 +111,4 @@ fn main() {
                 assert_eq!(sut.back(), model.back());
             }
         }
-    })
-}
+    });

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-BUILD_DIR=target/debug/
+source common.sh
+
+BUILD_DIR=fuzz/target/x86_64-apple-darwin/debug/
 
 gcloud auth activate-service-account --key-file ci/auth.json
-for TEST in str_repeat
+for TEST in ${TESTS}
 do
     TRGT=${BUILD_DIR}${TEST}.tar.gz
     tar zcf ${TRGT} ${BUILD_DIR}${TEST}
