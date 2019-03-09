@@ -7,6 +7,6 @@ script:
 - "./ci/builds.sh"
 - "./ci/upload_builds.sh"
 before_install:
-- apt-get install tree
+- sudo apt-get install tree
 - openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv
   -in ci/auth.json-enc -out ci/auth.json -d
