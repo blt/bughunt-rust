@@ -1,33 +1,11 @@
 language: rust
 cache: cargo
-
-env:
-  global:
-    - QUICKCHECK_GENERATOR_SIZE=10000
-    - QUICKCHECK_TESTS=10000
-
-matrix:
-  include:
-    - rust: stable
-      before_script:
-        - rustup component add rustfmt
-        - rustup component add clippy
-      script:
-        - cargo fmt -- --check
-        - cargo clippy
-        - cargo test
-    - rust: stable
-      script:
-        - cargo test --release
-    - rust: beta
-      script:
-        - cargo test
-    - rust: beta
-      script:
-        - cargo test --release
-    - rust: nightly
-      script:
-        - cargo test
-    - rust: nightly
-      script:
-        - cargo test --release
+rust:
+- nightly
+script:
+- cargo install --force cargo-fuzz
+- "./ci/builds.sh"
+- "./ci/upload_builds.sh"
+before_install:
+- openssl aes-256-cbc -K $encrypted_edc4a4aaa9a0_key -iv $encrypted_edc4a4aaa9a0_iv
+  -in ci/auth.json-enc -out ci/auth.json -d

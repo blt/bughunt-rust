@@ -4,23 +4,12 @@ version = "0.1.0-pre"
 authors = ["Brian L. Troutwine <brian@troutwine.us>"]
 
 [dependencies]
-afl       = "0.4"
 arbitrary = "0.2"
-bh_alloc  = "0.2.4"
 strum = "0.13.0"
 strum_macros = "0.13.0"
 
-[[bin]]
-path = "src/bin/stdlib/str/repeat.rs"
-name = "str_repeat"
-
-[[bin]]
-path = "src/bin/stdlib/collections/hash_map.rs"
-name = "hash_map"
-
-[[bin]]
-path = "src/bin/stdlib/collections/vec_deque.rs"
-name = "vec_deque"
+[dependencies.libfuzzer-sys]
+git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
 
 [patch.crates-io]
 strum_macros = { git = "https://github.com/Peternator7/strum" }
