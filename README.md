@@ -21,48 +21,23 @@ for crashes.
 ## Running the Suite
 
 Running the tests takes a little leg work. The project performs model-based
-fuzzing, which means the tests are driven by a fuzzer, AFL in particular. We've
-written about the general approach
-[here](https://blog.troutwine.us/2018/10/08/hunting-for-bugs-in-rust/).
+fuzzing, which means the tests are driven by a fuzzer, cargo-fuzz (libFuzzer) in
+particular. We've written about the general approach
+[here](https://blog.troutwine.us/2018/10/08/hunting-for-bugs-in-rust/). Since
+this post we've switch from AFL to libFuzzer but the broad details remain the
+same.
 
-The available targets are listed out in [`Cargo.toml`], the binaries of the
-project. Say you want to run the `str::repeat` target. Make sure you've got AFL
-installed by running `cargo install afl`. That done, create input and output
-directories for the fuzzer. The input directory influences what the fuzzer
-initially uses to populate it's testcase pool. The output directory will hold
-crashes, timeout etc data. Inputs have a huge influence on the running behaviour
-of a target but it's not straightforward to know what input you should
-supply. This is, uh, an open area of research.
-
-We'll create an input directory filled with not-so-great data
+The available targets are listed out in [`fuzz/Cargo.toml`], the binaries of the
+project. Say you want to run the `str::repeat` target. Make sure you've got
+cargo-fuzz installed by running `cargo install cargo-fuzz`.
 
 ```
-> mkdir -p /tmp/repeat/in
-> date >> /tmp/repeat/in/0000
-> date >> /tmp/repeat/in/0001
-> date >> /tmp/repeat/in/0002
-> date >> /tmp/repeat/in/0003
+> cargo fuzz run str_repeat
 ```
 
-and an output directory:
-
-```
-> mkdir -p /tmp/repeat/out
-```
-
-You can place these anywhere on disk you'd like. This is just an example. Okay,
-from the root of the project:
-
-```
-> cargo afl build
-> cargo afl fuzz -i /tmp/repeat/in -o /tmp/repeat/out/ target/debug/str_repeat
-```
-
-A reasonable test run will take hours. With the flags used above the run will
-proceed indefinitely. Please note that AFL is single-threaded and to exploit
-multi-core systems you'll need to spawn additional worker processes. This is
-documented in the [AFL
-project](https://github.com/mirrorer/afl/blob/master/docs/parallel_fuzzing.txt).
+A reasonable test run will take hours and as configured the above run will
+execute forever. Give the flag `--help` to `cargo fuzz` to see its options
+relating to runtime constriction, corpus definition etc.
 
 ### Why does this run outside of Rust itself?
 
@@ -71,20 +46,25 @@ project is something anyone would go for and, working here as an external
 project, we can avoid needing to fiddle with toolchains and longish build
 cycles. Downside is, the std data structures we're testing don't have any
 sanitizers turned on etc on account of the project is run against the usual Rust
-releases.
+release.
 
 ## Contributing
 
 Writing QuickCheck models can be slow work and contributions are _very_ welcome,
-either introducing new models into the project or extending existing ones. Once
-the project is a little more advanced donations of computing resources will
-also be welcome. Writing QuickCheck models can be slow but, boy, running them is
-no joke.
+either introducing new models into the project or extending existing ones. We
+have an experimental [clusterfuzz](https://github.com/google/clusterfuzz) setup
+running and if you have credits to donate that would be most welcome. I intend
+to document project balances, money needs once they are clear.
 
 ### Would you take CI help?
 
-Yes! It'd be really nifty if this project could be run automatically against
-every nightly, for instance, and flag when issues are discovered.
+Yes! Right now we have a folder `ci/` which has the build scripts used in
+`.travis.yml`. We're producing test binaries and feeding them directly into the
+clusterfuzz setup the project has. Speaking of, I'll be adding configuration for
+that cluster to this repository in the coming days.
+
+Any improvements in the build pipeline, clusterfuzz configuration are most
+welcome.
 
 ### Would you take documentation help?
 
@@ -100,5 +80,8 @@ available (itself a problem, kind of). In no certain order:
 * ["How Rust’s standard library was vulnerable for years and nobody noticed"](https://medium.com/@shnatsel/how-rusts-standard-library-was-vulnerable-for-years-and-nobody-noticed-aebf0503c3d6)
 * ["PropEr Testing"](https://propertesting.com/)
 * ["Moonconf Papers"](https://blog.troutwine.us/2016/05/26/moonconf-papers/)
+* ["Hybrid Fuzz Testing:Discovering Software Bugs viaFuzzing and Symbolic Execution"](http://reports-archive.adm.cs.cmu.edu/anon/2012/CMU-CS-12-116.pdf)
+* ["QuickFuzz: An Automatic Random Fuzzer for Common File Formats"](https://people.seas.harvard.edu/~pbuiras/publications/QFHaskell2016.pdf)
+* ["Angora: Efficient Fuzzing by Principled Search"](http://web.cs.ucdavis.edu/~hchen/paper/chen2018angora.pdf)
 
 I, blt, am also happy to answer questions over email. I'm brian@troutwine.us.
